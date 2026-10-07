@@ -1,25 +1,59 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;
+  --foreground: #1e293b;
+  --glass: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(37, 99, 235, 0.15);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: #2563eb;
+  --color-secondary: #38bdf8;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
   --font-sans: var(--font-noto-sans-myanmar), sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0f172a;
+    --foreground: #e2e8f0;
+    --glass: rgba(30, 41, 59, 0.6);
+    --glass-border: rgba(56, 189, 248, 0.2);
   }
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(55rem 35rem at 0% -10%, rgba(37, 99, 235, 0.22), transparent 70%),
+    radial-gradient(45rem 35rem at 100% 5%, rgba(56, 189, 248, 0.20), transparent 70%);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-noto-sans-myanmar), sans-serif;
+}
+
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 8px 30px rgba(37, 99, 235, 0.10);
+}
+
+/* Keyboard users (desktop): clear focus ring. Mouse users: pointer cursor. */
+:focus-visible {
+  outline: 3px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+button:not(:disabled),
+select,
+summary,
+[role="button"] {
+  cursor: pointer;
 }
