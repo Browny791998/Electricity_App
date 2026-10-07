@@ -7,6 +7,7 @@ import { MonthPicker } from "@/components/MonthPicker";
 import { isValidMonth, monthDays } from "@/lib/calendar";
 import { nowInYangon, type Group, type ScheduleRow } from "@/lib/schedule";
 import { getMonthData, getRegions } from "@/lib/calendar-data";
+import { VPN_HINT } from "@/lib/messages";
 
 type Search = { [key: string]: string | string[] | undefined };
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
@@ -89,6 +90,7 @@ async function CalendarContent({ searchParams }: { searchParams: Promise<Search>
           <p className="text-lg font-semibold">
             ဇယား ရယူ၍ မရပါ။ ခဏနေပြီး ပြန်ကြိုးစားပါ
           </p>
+          <p className="mt-3 rounded-xl bg-warning/15 p-3 text-sm font-semibold">{VPN_HINT}</p>
         </section>
       ) : rows.length === 0 ? (
         <section className="glass rounded-3xl p-8 text-center">

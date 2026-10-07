@@ -13,6 +13,7 @@ import {
 } from "@/lib/chat";
 import { ensureSession } from "@/lib/ensure-anon";
 import { formatYangonTime } from "@/lib/format";
+import { VPN_HINT } from "@/lib/messages";
 import type { Group } from "@/lib/schedule";
 import { createClient } from "@/lib/supabase-browser";
 
@@ -169,7 +170,7 @@ export function RegionChat({ region, group, nickname, onNicknameChange }: Props)
       if (kind === "text") setText("");
     } catch (e) {
       console.error("chat send failed", e);
-      setNotice("Chat သို့ ချိတ်ဆက်၍ မရပါ။ ခဏနေပြီး ပြန်ကြိုးစားပါ");
+      setNotice(`Chat သို့ ချိတ်ဆက်၍ မရပါ။ ${VPN_HINT.replace("ဇယား မပေါ်ရင်", "မချိတ်ရင်")}`);
     } finally {
       setSending(false);
     }
@@ -193,9 +194,10 @@ export function RegionChat({ region, group, nickname, onNicknameChange }: Props)
         {loading ? (
           <p className="py-10 text-center opacity-70">ရယူနေသည်…</p>
         ) : store.failed ? (
-          <p className="py-10 text-center font-semibold">
-            Chat ရယူ၍ မရပါ။ စာမျက်နှာကို ပြန်ဖွင့်ပါ
-          </p>
+          <div className="space-y-3 py-6 text-center">
+            <p className="font-semibold">Chat ရယူ၍ မရပါ။ စာမျက်နှာကို ပြန်ဖွင့်ပါ</p>
+            <p className="rounded-xl bg-warning/15 p-3 text-sm font-semibold">{VPN_HINT}</p>
+          </div>
         ) : messages.length === 0 ? (
           <p className="py-10 text-center opacity-70">
             ပြီးခဲ့သော ၆ နာရီအတွင်း အစီရင်ခံချက် မရှိသေးပါ

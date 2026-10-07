@@ -11,6 +11,8 @@ export interface Region {
   name_en: string;
 }
 
+const REGIONS_CACHE_KEY = "electricity-regions";
+
 export function useRegions() {
   const [regions, setRegions] = useState<Region[]>([]);
 
@@ -21,8 +23,24 @@ export function useRegions() {
       .select("code,name_mm,name_en")
       .eq("is_active", true)
       .order("sort_order")
-      .then(({ data }) => {
-        if (!cancelled && data) setRegions(data);
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (!error && data) {
+          setRegions(data);
+          try {
+            localStorage.setItem(REGIONS_CACHE_KEY, JSON.stringify(data));
+          } catch {
+            // Storage unavailable: no offline copy.
+          }
+          return;
+        }
+        // Offline: use the city list saved on this phone.
+        try {
+          const cached = JSON.parse(localStorage.getItem(REGIONS_CACHE_KEY) ?? "null");
+          if (Array.isArray(cached)) setRegions(cached as Region[]);
+        } catch {
+          // Ignore a corrupt cache.
+        }
       });
     return () => {
       cancelled = true;
@@ -34,11 +52,38 @@ export function useRegions() {
 
 interface Loaded {
   key: string;
-  rows: ScheduleRow[] | null; // null = request failed
+  rows: ScheduleRow[] | null; // null = request failed and nothing cached
+  staleSince: string | null; // ISO time of the cached copy shown when offline
+}
+
+const CACHE_PREFIX = "electricity-schedule:";
+const FETCH_AHEAD_DAYS = 30;
+
+function saveCache(region: string, rows: ScheduleRow[]) {
+  try {
+    localStorage.setItem(
+      CACHE_PREFIX + region,
+      JSON.stringify({ savedAt: new Date().toISOString(), rows }),
+    );
+  } catch {
+    // Storage full or unavailable: offline copy simply won't exist.
+  }
+}
+
+function readCache(region: string): { savedAt: string; rows: ScheduleRow[] } | null {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + region);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { savedAt?: unknown; rows?: unknown };
+    if (typeof parsed.savedAt !== "string" || !Array.isArray(parsed.rows)) return null;
+    return { savedAt: parsed.savedAt, rows: parsed.rows as ScheduleRow[] };
+  } catch {
+    return null;
+  }
 }
 
 /**
- * Schedule rows for yesterday..today+3 (yesterday is needed because
+ * Schedule rows for yesterday..today+30 (yesterday is needed because
  * 00:00-04:59 belongs to the previous day's slot 5). Refetches when the
  * region or the Yangon date changes.
  */
@@ -54,9 +99,22 @@ export function useScheduleRows(region: string, today: string) {
       .select("date,slot,power_group")
       .eq("region", region)
       .gte("date", addDays(today, -1))
-      .lte("date", addDays(today, 3))
+      .lte("date", addDays(today, FETCH_AHEAD_DAYS))
       .then(({ data, error }) => {
-        if (!cancelled) setLoaded({ key, rows: error ? null : (data ?? []) });
+        if (cancelled) return;
+        if (!error) {
+          const rows = (data ?? []) as ScheduleRow[];
+          saveCache(region, rows);
+          setLoaded({ key, rows, staleSince: null });
+          return;
+        }
+        // Offline or blocked: fall back to the last copy saved on this phone.
+        const cached = readCache(region);
+        setLoaded(
+          cached
+            ? { key, rows: cached.rows, staleSince: cached.savedAt }
+            : { key, rows: null, staleSince: null },
+        );
       });
     return () => {
       cancelled = true;
@@ -70,6 +128,7 @@ export function useScheduleRows(region: string, today: string) {
     loading: current === null,
     error: current !== null && current.rows === null,
     rows: current?.rows ?? [],
+    staleSince: current?.staleSince ?? null,
     retry,
   };
 }

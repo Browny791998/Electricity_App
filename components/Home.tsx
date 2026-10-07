@@ -5,9 +5,12 @@ import { useEffect, useState } from "react";
 import { DayTimeline } from "@/components/DayTimeline";
 import { GroupToggle } from "@/components/GroupToggle";
 import { RegionPicker } from "@/components/RegionPicker";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import { ReportBanner } from "@/components/ReportBanner";
 import { StatusCard } from "@/components/StatusCard";
 import { getBannerInfo } from "@/lib/banner";
+import { formatYangonDateTime } from "@/lib/format";
+import { VPN_HINT } from "@/lib/messages";
 import { getStatus, nowInYangon, type Group } from "@/lib/schedule";
 import {
   useRecentReports,
@@ -31,6 +34,15 @@ function useNow(intervalMs: number) {
     };
   }, [intervalMs]);
   return now;
+}
+
+/** Always visible: some networks block the data servers. */
+function VpnNote() {
+  return (
+    <p className="rounded-2xl bg-warning/15 p-3 text-center text-sm font-semibold leading-relaxed">
+      {VPN_HINT}
+    </p>
+  );
 }
 
 function FirstTime({
@@ -84,6 +96,8 @@ function FirstTime({
           ❓ အသုံးပြုနည်း
         </Link>
       </section>
+
+      <VpnNote />
     </main>
   );
 }
@@ -103,7 +117,7 @@ function Dashboard({
 }) {
   const now = useNow(REFRESH_MS);
   const today = nowInYangon(now).dateStr;
-  const { rows, loading, error, retry } = useScheduleRows(region, today);
+  const { rows, loading, error, staleSince, retry } = useScheduleRows(region, today);
   const status = getStatus(rows, group, now);
   const reports = useRecentReports(region, group);
   const banner = getBannerInfo(status, reports);
@@ -127,6 +141,7 @@ function Dashboard({
           <p className="text-lg font-semibold">
             ဇယား ရယူ၍ မရပါ။ အင်တာနက် စစ်ပြီး ထပ်ကြိုးစားပါ
           </p>
+
           <button
             type="button"
             onClick={retry}
@@ -138,6 +153,11 @@ function Dashboard({
       ) : (
         <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
           <div className="flex flex-col gap-5">
+            {staleSince && (
+              <p role="status" className="rounded-2xl bg-warning/15 p-3 text-center text-sm font-semibold">
+                📡 အင်တာနက် မရလို့ {formatYangonDateTime(staleSince)} က သိမ်းထားတဲ့ ဇယားကို ပြနေပါတယ်
+              </p>
+            )}
             <StatusCard status={status} region={region} />
             {banner && <ReportBanner info={banner} />}
           </div>
@@ -161,6 +181,9 @@ function Dashboard({
               💬 မီးအခြေအနေ Chat
             </Link>
           </div>
+          <div className="lg:col-span-2">
+            <InstallPrompt />
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-x-6 lg:col-span-2">
             <Link
               href="/report"
@@ -177,6 +200,8 @@ function Dashboard({
           </div>
         </div>
       )}
+
+      <VpnNote />
     </main>
   );
 }

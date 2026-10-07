@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { compressImage } from "@/lib/compress-image";
+import { VPN_HINT } from "@/lib/messages";
 import {
   CONTACT_MAX,
   MAX_PHOTOS,
@@ -99,7 +100,7 @@ export function ReportForm() {
         setError(json?.error ?? "ပို့၍ မရပါ။ ပြန်ကြိုးစားပါ");
       }
     } catch {
-      setError("အင်တာနက် ချိတ်ဆက်မှု မရပါ။ ပြန်ကြိုးစားပါ");
+      setError(`အင်တာနက် ချိတ်ဆက်မှု မရပါ။ ${VPN_HINT.replace("ဇယား မပေါ်ရင်", "မပို့နိုင်ရင်")}`);
     } finally {
       setBusy(false);
     }
